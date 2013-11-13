@@ -98,7 +98,7 @@ class Spaceship(GameObject):
 
 class Missile(GameObject):
     """Resembles a missile"""
-    def __init__(self, position, angle, speed=10):
+    def __init__(self, position, angle, speed=15):
         super(Missile, self).__init__(position, load_image('missile.png'))
         self.angle = angle
         self.direction = [0, 0]
