@@ -11,9 +11,9 @@ import datetime
 import random
 import pygame
 
-def load_image(filename):
+def load_image_convert_alpha(filename):
     """Load an image with the given filename from the images directory"""
-    return pygame.image.load(os.path.join('images', filename))
+    return pygame.image.load(os.path.join('images', filename)).convert_alpha()
 
 def draw_centered(surface1, surface2, position):
     """Draw surface1 onto surface2 with center at position"""
@@ -52,8 +52,8 @@ class GameObject(object):
 
 class Spaceship(GameObject):
     def __init__(self, position):
-        super(Spaceship, self).__init__(position, load_image('spaceship-off.png'))
-        self.image_on = load_image('spaceship-on.png')
+        super(Spaceship, self).__init__(position, load_image_convert_alpha('spaceship-off.png'))
+        self.image_on = load_image_convert_alpha('spaceship-on.png')
         self.direction = [0, -1]
         self.is_moving = False
         self.angle = 0
@@ -99,7 +99,7 @@ class Spaceship(GameObject):
 class Missile(GameObject):
     """Resembles a missile"""
     def __init__(self, position, angle, speed=15):
-        super(Missile, self).__init__(position, load_image('missile.png'))
+        super(Missile, self).__init__(position, load_image_convert_alpha('missile.png'))
         self.angle = angle
         self.direction = [0, 0]
         self.speed = speed        
@@ -123,7 +123,7 @@ class Rock(GameObject):
 
         if size in {"big", "normal", "small"}:
             str_filename = "rock-" + str(size) + ".png"
-            super(Rock, self).__init__(position, load_image(str_filename))
+            super(Rock, self).__init__(position, load_image_convert_alpha(str_filename))
         else:
             return None
 
