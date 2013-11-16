@@ -118,7 +118,7 @@ class Missile(GameObject):
     
 class Rock(GameObject):
     """Resembles a rock"""
-    def __init__(self, position, size):
+    def __init__(self, position, size, speed=4):
         """Initialize a Rock object, given its position and size"""
 
         if size in {"big", "normal", "small"}:
@@ -127,7 +127,29 @@ class Rock(GameObject):
         else:
             return None
 
-        self.position = position
+        self.position = list(position)
+
+        self.speed = speed
+        
+        
+        if bool(random.getrandbits(1)):
+            rand_x = random.random()* -1
+        else:
+            rand_x = random.random()
+        
+        if bool(random.getrandbits(1)):
+            rand_y = random.random() * -1
+        else:
+            rand_y = random.random()
+
+        self.direction = [rand_x, rand_y]
+
+
+    def move(self):
+        """Move the direction"""
+
+        self.position[0] += self.direction[0]*self.speed
+        self.position[1] += self.direction[1]*self.speed
 
 
 
@@ -216,6 +238,9 @@ class MyGame(object):
                 if len(self.spaceship.active_missiles) > 0:
                     self.missiles_physics()
 
+                if len(self.rocks) > 0:
+                    self.rocks_physics()
+
                 self.draw()
 
             else:
@@ -228,6 +253,7 @@ class MyGame(object):
         # call the move function of the object
         self.spaceship.move()
 
+
     def missiles_physics(self):
         
         # if there are any active missiles
@@ -236,10 +262,24 @@ class MyGame(object):
                 missile.move()
 
                 for rock in self.rocks:
-                    if distance(missile.position, rock.position) < 70:
+                    if distance(missile.position, rock.position) < 80:
                         self.rocks.remove(rock)
-                        self.spaceship.active_missiles.remove(missile)
+                        if missile in self.spaceship.active_missiles:
+                            self.spaceship.active_missiles.remove(missile)
                         self.make_rock()
+
+
+    def rocks_physics(self):
+        """Move the rocks if there are any"""
+
+        if len(self.rocks) > 0:
+
+            for rock in self.rocks:
+                rock.move()
+
+                if distance(rock.position, self.spaceship.position) < 90:
+                    pygame.quit()
+                    sys.exit()
 
 
     def draw(self):
