@@ -161,8 +161,8 @@ class MyGame(object):
         pygame.init()
 
         # set up a 1024 x 768 window
-        self.width = 1024
-        self.height = 768
+        self.width = 900
+        self.height = 700
         self.screen = pygame.display.set_mode((self.width, self.height))
 
         # use a black background
@@ -280,6 +280,12 @@ class MyGame(object):
                 if distance(rock.position, self.spaceship.position) < 90:
                     pygame.quit()
                     sys.exit()
+
+                elif distance(rock.position, (self.width/2, self.height/2)) > \
+                     math.sqrt((self.width/2)**2 + (self.height/2)**2):
+
+                    self.rocks.remove(rock)
+                    self.make_rock()
 
 
     def draw(self):
