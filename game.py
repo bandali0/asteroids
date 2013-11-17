@@ -435,7 +435,7 @@ class MyGame(object):
                      math.sqrt((self.width/2)**2 + (self.height/2)**2):
 
                     self.rocks.remove(rock)
-                    self.make_rock()
+                    self.make_rock(rock.size)
 
 
     def draw(self):
