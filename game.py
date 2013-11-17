@@ -245,22 +245,30 @@ class MyGame(object):
         self.counter = 0
     
 
-    def make_rock(self, size="big"):
+    def make_rock(self, size="big", pos=None):
         """Make a new rock"""
 
         margin = 200
 
-        rand_x = random.randint(margin, self.width-margin)
-        rand_y = random.randint(margin, self.height-margin)
-        
-        # while the co-ordinate is too close, discard it
-        # and generate another one
-        while distance((rand_x, rand_y), self.spaceship.position) < self.min_rock_distance:
-            # choose a random co-ordinate
-            rand_x = random.randint(0, self.width)
-            rand_y = random.randint(0, self.height)
+        if pos == None:
+            # no position was passed
 
-        temp_rock = Rock((rand_x, rand_y), size)
+            rand_x = random.randint(margin, self.width-margin)
+            rand_y = random.randint(margin, self.height-margin)
+            
+            # while the co-ordinate is too close, discard it
+            # and generate another one
+            while distance((rand_x, rand_y), self.spaceship.position) < self.min_rock_distance:
+                # choose a random co-ordinate
+                rand_x = random.randint(0, self.width)
+                rand_y = random.randint(0, self.height)
+
+            temp_rock = Rock((rand_x, rand_y), size)
+
+        else:
+            # a position was passed
+            temp_rock = Rock(pos, size)
+
         self.rocks.append(temp_rock)
 
 
@@ -391,16 +399,16 @@ class MyGame(object):
                             self.rocks.remove(rock)
                             if missile in self.spaceship.active_missiles:
                                 self.spaceship.active_missiles.remove(missile)
-                            self.make_rock("normal")
-                            self.make_rock("normal")
+                            self.make_rock("normal", (rock.position[0]+10, rock.position[1]))
+                            self.make_rock("normal", (rock.position[0]-10, rock.position[1]))
                             self.score += 20
                     elif rock.size == "normal":
                         if distance(missile.position, rock.position) < 55:
                             self.rocks.remove(rock)
                             if missile in self.spaceship.active_missiles:
                                 self.spaceship.active_missiles.remove(missile)
-                            self.make_rock("small")
-                            self.make_rock("small")
+                            self.make_rock("small", (rock.position[0]+10, rock.position[1]))
+                            self.make_rock("small", (rock.position[0]-10, rock.position[1]))
                             self.score += 50
                     else:
                         # the rock is small
