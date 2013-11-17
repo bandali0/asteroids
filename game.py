@@ -11,9 +11,20 @@ import datetime
 import random
 import pygame
 
+
+##################################
+# General Helper functions (START)
+##################################
+
 def load_image_convert_alpha(filename):
     """Load an image with the given filename from the images directory"""
     return pygame.image.load(os.path.join('images', filename)).convert_alpha()
+
+
+def load_sound(filename):
+    """Load a sound with the given filename from the sounds directory"""
+    return pygame.mixer.Sound(os.path.join('sounds', filename))
+
 
 def draw_centered(surface1, surface2, position):
     """Draw surface1 onto surface2 with center at position"""
@@ -21,15 +32,21 @@ def draw_centered(surface1, surface2, position):
     rect = rect.move(position[0]-rect.width//2, position[1]-rect.height//2)
     surface2.blit(surface1, rect)
 
+
 def rotate_center(image, rect, angle):
         """rotate the given image around its center and return an image & rect"""
         rotate_image = pygame.transform.rotate(image, angle)
         rotate_rect = rotate_image.get_rect(center=rect.center)
         return rotate_image,rotate_rect
 
+
 def distance(p, q):
     """Helper function to calculate distance between 2 points"""
     return math.sqrt((p[0]-q[0])**2 + (p[1]-q[1])**2)
+
+################################
+# General Helper functions (END)
+################################
 
 
 class GameObject(object):
@@ -146,7 +163,7 @@ class Rock(GameObject):
 
 
     def move(self):
-        """Move the direction"""
+        """Move the rock"""
 
         self.position[0] += self.direction[0]*self.speed
         self.position[1] += self.direction[1]*self.speed
@@ -154,6 +171,13 @@ class Rock(GameObject):
 
 
 class MyGame(object):
+
+    # defining and initializing game states
+    PLAYING, DYING, GAME_OVER, STARTING = range(4)
+
+    # defining custom events
+    REFRESH, START, RESTART = range(pygame.USEREVENT, pygame.USEREVENT+3)
+
     def __init__(self):
         """Initialize a new game"""
         pygame.mixer.init()
@@ -168,22 +192,56 @@ class MyGame(object):
         # use a black background
         self.bg_color = 0, 0, 0
 
+        # loading the sound track for the game
+        self.soundtrack = load_sound('soundtrack.wav')
+        self.soundtrack.set_volume(.3)
+
+        # loading the dying and game over sounds
+        self.die_sound = load_sound('die.wav')
+        self.gameover_sound = load_sound('game_over.wav')
+
+        # get the default system font (with size of 100)
+        font = pygame.font.SysFont(None, 100)
+        self.smaller_font = pygame.font.SysFont(None, 25)
+        # and make a text using the font just loaded
+        self.gameover_text = font.render('GAME OVER', True, (255, 0, 0))
+
         # Setup a timer to refresh the display FPS times per second
         self.FPS = 30
-        self.REFRESH = pygame.USEREVENT+1
         pygame.time.set_timer(self.REFRESH, 1000//self.FPS)
 
-        self.spaceship = Spaceship((self.width//2, self.height//2))
-        self.missiles = []
+        # initialize and start the game from scratch
+        self.do_init()
 
-        self.rocks = []
-        self.min_rock_distance = 350
-
-        for i in range(4):
-            self.make_rock()    
-
+        # used to monitor missile firing time
         self.fire_time = datetime.datetime.now()
 
+
+    def do_init(self):
+        """This function is called in the beginning or when
+        the game is restarted."""
+
+        # holds the rocks
+        self.rocks = []
+
+        # minimum distance from spaceship when making rocks
+        # this changes based on difficulty as the time passes
+        self.min_rock_distance = 350
+
+        # starting the game
+        self.start()
+
+        # making 4 rocks in the beginning
+        for i in range(4):
+            self.make_rock()
+
+        # initial number of lives and the score
+        self.lives = 3
+        self.score = 0
+
+        # counter used to help count seconds
+        self.counter = 0
+    
 
     def make_rock(self):
         """Make a new rock"""
@@ -203,6 +261,19 @@ class MyGame(object):
         temp_rock = Rock((rand_x, rand_y), "big")
         self.rocks.append(temp_rock)
 
+
+    def start(self):
+        """Start the game by creating the spaceship object"""
+        self.spaceship = Spaceship((self.width//2, self.height//2))
+        self.missiles = []
+
+        # start the sound track loop
+        self.soundtrack.play(-1, 0, 1000)
+
+        # set the state to PLAYING
+        self.state = MyGame.PLAYING
+
+
     def run(self):
         """Loop forever processing events"""
         running = True
@@ -214,7 +285,8 @@ class MyGame(object):
                 running = False
 
             # time to draw a new frame
-            elif event.type == self.REFRESH:
+            elif event.type == MyGame.REFRESH:
+                
                 keys = pygame.key.get_pressed()
             
                 if keys[pygame.K_SPACE]:
@@ -223,36 +295,85 @@ class MyGame(object):
                         self.spaceship.fire()
                         self.fire_time = new_time
 
-                if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                    self.spaceship.angle -= 10
-                    self.spaceship.angle %= 360
-                if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                    self.spaceship.angle += 10
-                    self.spaceship.angle %= 360
-                if keys[pygame.K_UP] or keys[pygame.K_w]:
-                    self.physics()
-                    self.spaceship.is_moving = True
-                    # print self.spaceship.angle
-                else:
-                    self.spaceship.is_moving = False
+                if self.state == MyGame.PLAYING:
 
-                if len(self.spaceship.active_missiles) > 0:
-                    self.missiles_physics()
+                    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                        self.spaceship.angle -= 10
+                        self.spaceship.angle %= 360
+                    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                        self.spaceship.angle += 10
+                        self.spaceship.angle %= 360
+                    if keys[pygame.K_UP] or keys[pygame.K_w]:
+                        self.physics()
+                        self.spaceship.is_moving = True
+                        # print self.spaceship.angle
+                    else:
+                        self.spaceship.is_moving = False
 
-                if len(self.rocks) > 0:
-                    self.rocks_physics()
+                    if len(self.spaceship.active_missiles) > 0:
+                        self.missiles_physics()
+
+                    if len(self.rocks) > 0:
+                        self.rocks_physics()
 
                 self.draw()
+
+            # resume after losing a life
+            elif event.type == MyGame.START:
+                pygame.time.set_timer(MyGame.START, 0) # turn the timer off
+                if self.lives < 1:
+                    self.game_over()
+                else:
+                    self.rocks = []
+                    # make 4 rocks
+                    for i in range(4):
+                        self.make_rock()
+                    # start again
+                    self.start()
+
+            # switch from game over screen to new game
+            elif event.type == MyGame.RESTART:
+                pygame.time.set_timer(MyGame.RESTART, 0) # turn the timer off
+                self.state = MyGame.STARTING
+
+            # user is clicking to start a new game
+            elif event.type == pygame.MOUSEBUTTONDOWN \
+                    and self.state == MyGame.STARTING:
+                self.do_init()
 
             else:
                 pass # an event type we don't handle            
 
 
+    def game_over(self):
+        """Losing a life"""
+        self.soundtrack.stop()
+        # play game over sound and wait for it to end before continuing
+        self.state = MyGame.GAME_OVER
+        self.gameover_sound.play()
+        delay = int((self.gameover_sound.get_length()+1)*1000)
+        pygame.time.set_timer(MyGame.RESTART, delay)
+
+
+    def die(self):
+        """Losing a life"""
+        self.soundtrack.stop()
+        # play dying sound and wait for it to end before continuing
+        self.lives -= 1
+        self.counter = 0        
+        self.state = MyGame.DYING
+        self.die_sound.play()
+        delay = int((self.die_sound.get_length()+1)*1000)
+        pygame.time.set_timer(MyGame.START, delay)
+
+
     def physics(self):
         """Do in-game physics here"""
         
-        # call the move function of the object
-        self.spaceship.move()
+        if self.state == MyGame.PLAYING:
+
+            # call the move function of the object
+            self.spaceship.move()
 
 
     def missiles_physics(self):
@@ -279,8 +400,7 @@ class MyGame(object):
                 rock.move()
 
                 if distance(rock.position, self.spaceship.position) < 90:
-                    pygame.quit()
-                    sys.exit()
+                    self.die()
 
                 elif distance(rock.position, (self.width/2, self.height/2)) > \
                      math.sqrt((self.width/2)**2 + (self.height/2)**2):
@@ -306,6 +426,23 @@ class MyGame(object):
             for rock in self.rocks:
                 rock.draw_on(self.screen)
 
+        if self.state == MyGame.PLAYING:
+            # increment the counter by 1
+            self.counter += 1
+
+            # every half second that passes, add 5 to the scores
+            if self.counter % (self.FPS/2) == 0:
+                self.score += 5
+
+            if self.counter == 30*self.FPS:
+            # time to add a new rock (30 secs without dying)
+
+                if len(self.rocks) < 10:  # keeping it sane
+                    self.make_rock()
+
+            # set the counter back to zero
+                self.counter = 0
+
         # flip buffers so that everything we have drawn gets displayed
         pygame.display.flip()
 
@@ -314,3 +451,5 @@ MyGame().run()
 pygame.quit()
 sys.exit()
 
+
+# Sounds tracks from http://soundbible.com
