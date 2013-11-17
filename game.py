@@ -440,8 +440,8 @@ class MyGame(object):
                 if len(self.rocks) < 10:  # keeping it sane
                     self.make_rock()
 
-            # set the counter back to zero
-                self.counter = 0
+                # set the counter back to zero
+                    self.counter = 0
 
         # flip buffers so that everything we have drawn gets displayed
         pygame.display.flip()
