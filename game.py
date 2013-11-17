@@ -212,6 +212,9 @@ class MyGame(object):
         self.FPS = 30
         pygame.time.set_timer(self.REFRESH, 1000//self.FPS)
 
+        # a dictionary of death distances of different rock sizes
+        self.death_distances = {"big":90,"normal":65 ,"small":40}
+
         # initialize and start the game from scratch
         self.do_init()
 
@@ -428,7 +431,9 @@ class MyGame(object):
             for rock in self.rocks:
                 rock.move()
 
-                if distance(rock.position, self.spaceship.position) < 90:
+
+                if distance(rock.position, self.spaceship.position) < \
+                        self.death_distances[rock.size]:
                     self.die()
 
                 elif distance(rock.position, (self.width/2, self.height/2)) > \
