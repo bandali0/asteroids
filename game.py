@@ -160,9 +160,9 @@ class MyGame(object):
         pygame.mixer.pre_init(44100, -16, 2, 2048)
         pygame.init()
 
-        # set up a 1024 x 768 window
-        self.width = 900
-        self.height = 700
+        # set up a 800 x 600 window
+        self.width = 800
+        self.height = 600
         self.screen = pygame.display.set_mode((self.width, self.height))
 
         # use a black background
@@ -177,6 +177,7 @@ class MyGame(object):
         self.missiles = []
 
         self.rocks = []
+        self.min_rock_distance = 350
 
         for i in range(4):
             self.make_rock()    
@@ -194,7 +195,7 @@ class MyGame(object):
         
         # while the co-ordinate is too close, discard it
         # and generate another one
-        while distance((rand_x, rand_y), self.spaceship.position) < 350:
+        while distance((rand_x, rand_y), self.spaceship.position) < self.min_rock_distance:
             # choose a random co-ordinate
             rand_x = random.randint(0, self.width)
             rand_y = random.randint(0, self.height)
