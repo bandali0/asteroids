@@ -200,6 +200,7 @@ class MyGame(object):
         # loading the dying and game over sounds
         self.die_sound = load_sound('die.wav')
         self.gameover_sound = load_sound('game_over.wav')
+        self.missile_sound = load_sound('fire.wav')
 
         # get the default system font (with size of 100)
         font = pygame.font.SysFont(None, 100)
@@ -306,6 +307,7 @@ class MyGame(object):
                     new_time = datetime.datetime.now()
                     if new_time - self.fire_time > datetime.timedelta(seconds=0.15):
                         self.spaceship.fire()
+                        self.missile_sound.play()
                         self.fire_time = new_time
 
                 if self.state == MyGame.PLAYING:
