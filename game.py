@@ -202,7 +202,8 @@ class MyGame(object):
 
         # get the default system font (with size of 100)
         font = pygame.font.SysFont(None, 100)
-        self.smaller_font = pygame.font.SysFont(None, 25)
+        self.medium_font = pygame.font.SysFont(None, 50)
+        self.small_font = pygame.font.SysFont(None, 25)
         # and make a text using the font just loaded
         self.gameover_text = font.render('GAME OVER', True, (255, 0, 0))
 
@@ -442,6 +443,18 @@ class MyGame(object):
 
                 # set the counter back to zero
                     self.counter = 0
+
+        # create and display the text for score
+        scores_text = self.medium_font.render(str(self.score),\
+                                                True, (0, 155, 0))
+        draw_centered(scores_text, self.screen,\
+            (self.width-scores_text.get_width(), scores_text.get_height()+\
+                                                    10))
+
+        # if the game is over
+        if self.state == MyGame.GAME_OVER or self.state == MyGame.STARTING:
+            draw_centered(self.gameover_text, self.screen,\
+                            (self.width//2, self.height//2))
 
         # flip buffers so that everything we have drawn gets displayed
         pygame.display.flip()
