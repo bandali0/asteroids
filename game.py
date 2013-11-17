@@ -141,6 +141,7 @@ class Rock(GameObject):
         if size in {"big", "normal", "small"}:
             str_filename = "rock-" + str(size) + ".png"
             super(Rock, self).__init__(position, load_image_convert_alpha(str_filename))
+            self.size = size
         else:
             return None
 
@@ -244,7 +245,7 @@ class MyGame(object):
         self.counter = 0
     
 
-    def make_rock(self):
+    def make_rock(self, size="big"):
         """Make a new rock"""
 
         margin = 200
@@ -259,7 +260,7 @@ class MyGame(object):
             rand_x = random.randint(0, self.width)
             rand_y = random.randint(0, self.height)
 
-        temp_rock = Rock((rand_x, rand_y), "big")
+        temp_rock = Rock((rand_x, rand_y), size)
         self.rocks.append(temp_rock)
 
 
@@ -385,11 +386,30 @@ class MyGame(object):
                 missile.move()
 
                 for rock in self.rocks:
-                    if distance(missile.position, rock.position) < 80:
-                        self.rocks.remove(rock)
-                        if missile in self.spaceship.active_missiles:
-                            self.spaceship.active_missiles.remove(missile)
-                        self.make_rock()
+                    if rock.size == "big":
+                        if distance(missile.position, rock.position) < 80:
+                            self.rocks.remove(rock)
+                            if missile in self.spaceship.active_missiles:
+                                self.spaceship.active_missiles.remove(missile)
+                            self.make_rock("normal")
+                            self.make_rock("normal")
+                            self.score += 20
+                    elif rock.size == "normal":
+                        if distance(missile.position, rock.position) < 55:
+                            self.rocks.remove(rock)
+                            if missile in self.spaceship.active_missiles:
+                                self.spaceship.active_missiles.remove(missile)
+                            self.make_rock("small")
+                            self.make_rock("small")
+                            self.score += 50
+                    else:
+                        # the rock is small
+                        if distance(missile.position, rock.position) < 30:
+                            self.rocks.remove(rock)
+                            if missile in self.spaceship.active_missiles:
+                                self.spaceship.active_missiles.remove(missile)
+                            self.make_rock()
+                            self.score += 100
 
 
     def rocks_physics(self):
@@ -430,10 +450,6 @@ class MyGame(object):
         if self.state == MyGame.PLAYING:
             # increment the counter by 1
             self.counter += 1
-
-            # every half second that passes, add 5 to the scores
-            if self.counter % (self.FPS/2) == 0:
-                self.score += 5
 
             if self.counter == 30*self.FPS:
             # time to add a new rock (30 secs without dying)
