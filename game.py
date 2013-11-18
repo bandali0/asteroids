@@ -335,11 +335,12 @@ class MyGame(object):
                             self.spaceship.angle %= 360
                         if keys[pygame.K_UP] or keys[pygame.K_w]:
                             self.spaceship.is_moving = True
-                            # print self.spaceship.angle
-                            self.spaceship.speed += 1.5
+                            
+                            if self.spaceship.speed < 20:
+                                self.spaceship.speed += 1
                         else:
                             if self.spaceship.speed > 0:
-                                self.spaceship.speed -= .75
+                                self.spaceship.speed -= 1
                             self.spaceship.is_moving = False
 
                         if len(self.spaceship.active_missiles) > 0:
