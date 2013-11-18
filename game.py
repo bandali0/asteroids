@@ -209,6 +209,8 @@ class MyGame(object):
         # and make a text using the font just loaded
         self.gameover_text = font.render('GAME OVER', True, (255, 0, 0))
 
+        self.lives_image = load_image_convert_alpha('spaceship-off.png')
+
         # Setup a timer to refresh the display FPS times per second
         self.FPS = 30
         pygame.time.set_timer(self.REFRESH, 1000//self.FPS)
@@ -486,6 +488,11 @@ class MyGame(object):
         if self.state == MyGame.GAME_OVER or self.state == MyGame.STARTING:
             draw_centered(self.gameover_text, self.screen,\
                             (self.width//2, self.height//2))
+
+        # draw lives
+        for i in range(self.lives):
+            draw_centered(self.lives_image, self.screen, (self.lives_image.get_width()*i*1.2+40, self.lives_image.get_height()//2))
+
 
         # flip buffers so that everything we have drawn gets displayed
         pygame.display.flip()
