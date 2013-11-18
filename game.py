@@ -51,7 +51,7 @@ def distance(p, q):
 
 class GameObject(object):
     """All game objects have a position and an image"""
-    def __init__(self, position, image, speed=4):
+    def __init__(self, position, image, speed=0):
         # max speed should be 6.5
         self.image = image
         self.position = list(position[:])
@@ -233,7 +233,7 @@ class MyGame(object):
         self.welcome_asteroids = self.big_font.render("Asteroids",\
                                                 True, (255, 215, 0))
         self.welcome_desc =  self.medium_font.render(\
-            "Click anywhere or press Enter to begin!", True, (35, 107, 142))
+            "[Click anywhere/press Enter] to begin!", True, (35, 107, 142))
 
 
     def do_init(self):
@@ -334,10 +334,12 @@ class MyGame(object):
                             self.spaceship.angle += 10
                             self.spaceship.angle %= 360
                         if keys[pygame.K_UP] or keys[pygame.K_w]:
-                            self.physics()
                             self.spaceship.is_moving = True
                             # print self.spaceship.angle
+                            self.spaceship.speed += 1.5
                         else:
+                            if self.spaceship.speed > 0:
+                                self.spaceship.speed -= .75
                             self.spaceship.is_moving = False
 
                         if len(self.spaceship.active_missiles) > 0:
@@ -345,6 +347,8 @@ class MyGame(object):
 
                         if len(self.rocks) > 0:
                             self.rocks_physics()
+
+                        self.physics()
 
                 self.draw()
 
