@@ -1,7 +1,7 @@
-"""Some simple skeleton code for a pygame game/animation
+"""
+Simple asteroids clone written in Python
 
-This skeleton sets up a basic 800x600 window, an event loop, and a
-redraw timer to redraw at 30 frames per second.
+by Amin Bandali
 """
 from __future__ import division
 import math
