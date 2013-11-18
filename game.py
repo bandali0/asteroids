@@ -423,7 +423,10 @@ class MyGame(object):
                             self.rocks.remove(rock)
                             if missile in self.spaceship.active_missiles:
                                 self.spaceship.active_missiles.remove(missile)
-                            self.make_rock()
+                            
+                            if len(self.rocks) < 10:
+                                self.make_rock()
+                            
                             self.score += 100
 
 
@@ -444,7 +447,8 @@ class MyGame(object):
                      math.sqrt((self.width/2)**2 + (self.height/2)**2):
 
                     self.rocks.remove(rock)
-                    self.make_rock(rock.size)
+                    if len(self.rocks) < 10:
+                        self.make_rock(rock.size)
 
 
     def draw(self):
@@ -468,11 +472,14 @@ class MyGame(object):
             # increment the counter by 1
             self.counter += 1
 
-            if self.counter == 30*self.FPS:
-            # time to add a new rock (30 secs without dying)
+            if self.counter == 20*self.FPS:
+            # time to add a new rock (20 secs without dying)
 
-                if len(self.rocks) < 10:  # keeping it sane
+                if len(self.rocks) < 15:  # keeping it sane
                     self.make_rock()
+
+                if self.min_rock_distance < 200:
+                    self.min_rock_distance -= 50
 
                 # set the counter back to zero
                     self.counter = 0
