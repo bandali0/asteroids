@@ -174,7 +174,7 @@ class Rock(GameObject):
 class MyGame(object):
 
     # defining and initializing game states
-    PLAYING, DYING, GAME_OVER, STARTING = range(4)
+    PLAYING, DYING, GAME_OVER, STARTING, WELCOME = range(5)
 
     # defining custom events
     REFRESH, START, RESTART = range(pygame.USEREVENT, pygame.USEREVENT+3)
@@ -203,11 +203,11 @@ class MyGame(object):
         self.missile_sound = load_sound('fire.wav')
 
         # get the default system font (with size of 100)
-        font = pygame.font.SysFont(None, 100)
+        self.big_font = pygame.font.SysFont(None, 100)
         self.medium_font = pygame.font.SysFont(None, 50)
         self.small_font = pygame.font.SysFont(None, 25)
         # and make a text using the font just loaded
-        self.gameover_text = font.render('GAME OVER', True, (255, 0, 0))
+        self.gameover_text = self.big_font.render('GAME OVER', True, (255, 0, 0))
 
         self.lives_image = load_image_convert_alpha('spaceship-off.png')
 
@@ -218,11 +218,22 @@ class MyGame(object):
         # a dictionary of death distances of different rock sizes
         self.death_distances = {"big":90,"normal":65 ,"small":40}
 
-        # initialize and start the game from scratch
-        self.do_init()
+        # display the welcome screen
+        self.do_welcome()
 
         # used to monitor missile firing time
         self.fire_time = datetime.datetime.now()
+
+
+    def do_welcome(self):
+        """make a welcome screen"""
+
+        self.state = MyGame.WELCOME
+
+        self.welcome_asteroids = self.big_font.render("Asteroids",\
+                                                True, (255, 215, 0))
+        self.welcome_desc =  self.medium_font.render(\
+            "Click anywhere or press Enter to begin!", True, (35, 107, 142))
 
 
     def do_init(self):
@@ -303,35 +314,37 @@ class MyGame(object):
             # time to draw a new frame
             elif event.type == MyGame.REFRESH:
                 
-                keys = pygame.key.get_pressed()
-            
-                if keys[pygame.K_SPACE]:
-                    new_time = datetime.datetime.now()
-                    if new_time - self.fire_time > datetime.timedelta(seconds=0.15):
-                        self.spaceship.fire()
-                        self.missile_sound.play()
-                        self.fire_time = new_time
+                if self.state != MyGame.WELCOME:
 
-                if self.state == MyGame.PLAYING:
+                    keys = pygame.key.get_pressed()
+                
+                    if keys[pygame.K_SPACE]:
+                        new_time = datetime.datetime.now()
+                        if new_time - self.fire_time > datetime.timedelta(seconds=0.15):
+                            self.spaceship.fire()
+                            self.missile_sound.play()
+                            self.fire_time = new_time
 
-                    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                        self.spaceship.angle -= 10
-                        self.spaceship.angle %= 360
-                    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                        self.spaceship.angle += 10
-                        self.spaceship.angle %= 360
-                    if keys[pygame.K_UP] or keys[pygame.K_w]:
-                        self.physics()
-                        self.spaceship.is_moving = True
-                        # print self.spaceship.angle
-                    else:
-                        self.spaceship.is_moving = False
+                    if self.state == MyGame.PLAYING:
 
-                    if len(self.spaceship.active_missiles) > 0:
-                        self.missiles_physics()
+                        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                            self.spaceship.angle -= 10
+                            self.spaceship.angle %= 360
+                        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                            self.spaceship.angle += 10
+                            self.spaceship.angle %= 360
+                        if keys[pygame.K_UP] or keys[pygame.K_w]:
+                            self.physics()
+                            self.spaceship.is_moving = True
+                            # print self.spaceship.angle
+                        else:
+                            self.spaceship.is_moving = False
 
-                    if len(self.rocks) > 0:
-                        self.rocks_physics()
+                        if len(self.spaceship.active_missiles) > 0:
+                            self.missiles_physics()
+
+                        if len(self.rocks) > 0:
+                            self.rocks_physics()
 
                 self.draw()
 
@@ -355,7 +368,14 @@ class MyGame(object):
 
             # user is clicking to start a new game
             elif event.type == pygame.MOUSEBUTTONDOWN \
-                    and self.state == MyGame.STARTING:
+                    and (self.state == MyGame.STARTING or self.state == MyGame.WELCOME):
+                self.do_init()
+
+            # user is pressing enter to start a new game
+            elif event.type == pygame.KEYDOWN \
+                    and event.key == pygame.K_RETURN and \
+                        (self.state == MyGame.STARTING or \
+                            self.state == MyGame.WELCOME):
                 self.do_init()
 
             else:
@@ -456,50 +476,62 @@ class MyGame(object):
         # everything we draw now is to a buffer that is not displayed
         self.screen.fill(self.bg_color)
     
-        self.spaceship.draw_on(self.screen)
+        if self.state != MyGame.WELCOME:
+            # if we are not on the welcome screen
 
-        # if there are any active missiles
-        if len(self.spaceship.active_missiles) >  0:
-            for missile in self.spaceship.active_missiles:
-                missile.draw_on(self.screen)
+            self.spaceship.draw_on(self.screen)
 
-        # draw the rocks
-        if len(self.rocks) >  0:
-            for rock in self.rocks:
-                rock.draw_on(self.screen)
+            # if there are any active missiles
+            if len(self.spaceship.active_missiles) >  0:
+                for missile in self.spaceship.active_missiles:
+                    missile.draw_on(self.screen)
 
-        if self.state == MyGame.PLAYING:
-            # increment the counter by 1
-            self.counter += 1
+            # draw the rocks
+            if len(self.rocks) >  0:
+                for rock in self.rocks:
+                    rock.draw_on(self.screen)
 
-            if self.counter == 20*self.FPS:
-            # time to add a new rock (20 secs without dying)
+            if self.state == MyGame.PLAYING:
+                # increment the counter by 1
+                self.counter += 1
 
-                if len(self.rocks) < 15:  # keeping it sane
-                    self.make_rock()
+                if self.counter == 20*self.FPS:
+                # time to add a new rock (20 secs without dying)
 
-                if self.min_rock_distance < 200:
-                    self.min_rock_distance -= 50
+                    if len(self.rocks) < 15:  # keeping it sane
+                        self.make_rock()
 
-                # set the counter back to zero
-                    self.counter = 0
+                    if self.min_rock_distance < 200:
+                        self.min_rock_distance -= 50
 
-        # create and display the text for score
-        scores_text = self.medium_font.render(str(self.score),\
-                                                True, (0, 155, 0))
-        draw_centered(scores_text, self.screen,\
-            (self.width-scores_text.get_width(), scores_text.get_height()+\
-                                                    10))
+                    # set the counter back to zero
+                        self.counter = 0
 
-        # if the game is over
-        if self.state == MyGame.GAME_OVER or self.state == MyGame.STARTING:
-            draw_centered(self.gameover_text, self.screen,\
-                            (self.width//2, self.height//2))
+            # create and display the text for score
+            scores_text = self.medium_font.render(str(self.score),\
+                                                    True, (0, 155, 0))
+            draw_centered(scores_text, self.screen,\
+                (self.width-scores_text.get_width(), scores_text.get_height()+\
+                                                        10))
 
-        # draw lives
-        for i in range(self.lives):
-            draw_centered(self.lives_image, self.screen, (self.lives_image.get_width()*i*1.2+40, self.lives_image.get_height()//2))
+            # if the game is over
+            if self.state == MyGame.GAME_OVER or self.state == MyGame.STARTING:
+                draw_centered(self.gameover_text, self.screen,\
+                                (self.width//2, self.height//2))
 
+            # draw lives
+            for i in range(self.lives):
+                draw_centered(self.lives_image, self.screen,\
+                    (self.lives_image.get_width()*i*1.2+40,\
+                        self.lives_image.get_height()//2))
+
+        else:
+            # draw the welcome texts
+            draw_centered(self.welcome_asteroids, self.screen,\
+                (self.width//2, self.height//2-self.welcome_asteroids.get_height()))
+
+            draw_centered(self.welcome_desc, self.screen,\
+                (self.width//2, self.height//2+self.welcome_desc.get_height()))
 
         # flip buffers so that everything we have drawn gets displayed
         pygame.display.flip()
