@@ -1,7 +1,12 @@
 """
 Simple asteroids clone written in Python
-
+     _        _                 _     _     
+    / \   ___| |_ ___ _ __ ___ (_) __| |___ 
+   / _ \ / __| __/ _ \ '__/ _ \| |/ _` / __|
+  / ___ \\__ \ ||  __/ | | (_) | | (_| \__ \
+ /_/   \_\___/\__\___|_|  \___/|_|\__,_|___/
 by Amin Bandali
+
 """
 from __future__ import division
 import math
@@ -34,7 +39,7 @@ def draw_centered(surface1, surface2, position):
 
 
 def rotate_center(image, rect, angle):
-        """rotate the given image around its center and return an image & rect"""
+        """rotate the given image around its center & return an image & rect"""
         rotate_image = pygame.transform.rotate(image, angle)
         rotate_rect = rotate_image.get_rect(center=rect.center)
         return rotate_image,rotate_rect
