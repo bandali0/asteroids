@@ -69,22 +69,30 @@ class GameObject(object):
 
 class Spaceship(GameObject):
     def __init__(self, position):
-        super(Spaceship, self).__init__(position, load_image_convert_alpha('spaceship-off.png'))
+        """initializing an Spaceship object given it's position"""
+        super(Spaceship, self).__init__(position,\
+            load_image_convert_alpha('spaceship-off.png'))
+        
         self.image_on = load_image_convert_alpha('spaceship-on.png')
         self.direction = [0, -1]
-        self.is_moving = False
+        self.is_throttle_on = False
         self.angle = 0
 
+        # a list to hold the missiles fired by the spaceship
+        # (that are active (on the screen))
         self.active_missiles = []
 
     def draw_on(self, screen):
         """Draw the spaceship on the screen"""
 
-        # select the image, based on the fact that spaceship is moving or not
-        if self.is_moving:
-            new_image, rect = rotate_center(self.image_on, self.image_on.get_rect(), self.angle)
+        # select the image, based on the fact that spaceship is accelerating
+        # or not
+        if self.is_throttle_on:
+            new_image, rect = rotate_center(self.image_on, \
+                self.image_on.get_rect(), self.angle)
         else:
-            new_image, rect = rotate_center(self.image, self.image.get_rect(), self.angle)
+            new_image, rect = rotate_center(self.image, \
+                self.image.get_rect(), self.angle)
         
         draw_centered(new_image, screen, self.position)
 
@@ -92,9 +100,11 @@ class Spaceship(GameObject):
     def move(self):
         """Do one frame's worth of updating for the object"""
         
+        # calculate the direction from the angle variable
         self.direction[0] = math.sin(-math.radians(self.angle))
         self.direction[1] = -math.cos(math.radians(self.angle))
 
+        # calculate the position from the direction and speed
         self.position[0] += self.direction[0]*self.speed
         self.position[1] += self.direction[1]*self.speed
 
@@ -102,10 +112,17 @@ class Spaceship(GameObject):
     def fire(self):
         """create a new Missile and fire it!!"""
 
+        # adjust the firing position of the missile based on the
+        # angle of the spaceship.
+        # adjust[] is used to help hold the position of the point
+        # from where the missile should be fired. In other words,
+        # for example missiles should be fired from the bottom of
+        # the spaceship if it's facing down.
         adjust = [0, 0]
         adjust[0] = math.sin(-math.radians(self.angle))*self.image.get_width()
         adjust[1] = -math.cos(math.radians(self.angle))*self.image.get_height()
 
+        # create a new missile using the calculated adjusted position
         new_missile = Missile((self.position[0]+adjust[0],\
                                self.position[1]+adjust[1]/2),\
                                self.angle)
@@ -116,7 +133,9 @@ class Spaceship(GameObject):
 class Missile(GameObject):
     """Resembles a missile"""
     def __init__(self, position, angle, speed=15):
-        super(Missile, self).__init__(position, load_image_convert_alpha('missile.png'))
+        super(Missile, self).__init__(position,\
+            load_image_convert_alpha('missile.png'))
+
         self.angle = angle
         self.direction = [0, 0]
         self.speed = speed        
@@ -125,9 +144,11 @@ class Missile(GameObject):
     def move(self):
         """Move the missile towards its destination"""
 
+        # calculate the direction from the angle variable
         self.direction[0] = math.sin(-math.radians(self.angle))
         self.direction[1] = -math.cos(math.radians(self.angle))
 
+        # calculate the position from the direction and speed
         self.position[0] += self.direction[0]*self.speed
         self.position[1] += self.direction[1]*self.speed
 
@@ -138,18 +159,24 @@ class Rock(GameObject):
     def __init__(self, position, size, speed=4):
         """Initialize a Rock object, given its position and size"""
 
+        # if the size is valid
         if size in {"big", "normal", "small"}:
+
+            # load the correct image from file
             str_filename = "rock-" + str(size) + ".png"
-            super(Rock, self).__init__(position, load_image_convert_alpha(str_filename))
+            super(Rock, self).__init__(position,\
+                load_image_convert_alpha(str_filename))
             self.size = size
+        
         else:
+            # the size is not pre-defined
             return None
 
         self.position = list(position)
 
         self.speed = speed
         
-        
+        # create a random movement direction vector
         if bool(random.getrandbits(1)):
             rand_x = random.random()* -1
         else:
@@ -197,18 +224,20 @@ class MyGame(object):
         self.soundtrack = load_sound('soundtrack.wav')
         self.soundtrack.set_volume(.3)
 
-        # loading the dying and game over sounds
+        # loading the dying, game over and missile sounds
         self.die_sound = load_sound('die.wav')
         self.gameover_sound = load_sound('game_over.wav')
         self.missile_sound = load_sound('fire.wav')
 
-        # get the default system font (with size of 100)
+        # get the default system font (with different sizes of 100, 50, 25)
         self.big_font = pygame.font.SysFont(None, 100)
         self.medium_font = pygame.font.SysFont(None, 50)
         self.small_font = pygame.font.SysFont(None, 25)
-        # and make a text using the font just loaded
-        self.gameover_text = self.big_font.render('GAME OVER', True, (255, 0, 0))
+        # and make the game over text using the big font just loaded
+        self.gameover_text = self.big_font.render('GAME OVER',\
+            True, (255, 0, 0))
 
+        # load a spaceship image (only used to display number of lives)
         self.lives_image = load_image_convert_alpha('spaceship-off.png')
 
         # Setup a timer to refresh the display FPS times per second
@@ -222,14 +251,17 @@ class MyGame(object):
         self.do_welcome()
 
         # used to monitor missile firing time
+        # to prevent firing too many missiles in a short time
         self.fire_time = datetime.datetime.now()
 
 
     def do_welcome(self):
         """make a welcome screen"""
 
+        # go to WELCOME state
         self.state = MyGame.WELCOME
 
+        # making the welcome title and description
         self.welcome_asteroids = self.big_font.render("Asteroids",\
                                                 True, (255, 215, 0))
         self.welcome_desc =  self.medium_font.render(\
@@ -250,11 +282,11 @@ class MyGame(object):
         # starting the game
         self.start()
 
-        # making 4 rocks in the beginning
+        # create 4 big rocks
         for i in range(4):
             self.make_rock()
 
-        # initial number of lives and the score
+        # initialize the number of lives and the score
         self.lives = 3
         self.score = 0
 
@@ -265,27 +297,31 @@ class MyGame(object):
     def make_rock(self, size="big", pos=None):
         """Make a new rock"""
 
+        # minimum margin when creating rocks
         margin = 200
 
         if pos == None:
-            # no position was passed
+            # no position was passed. make at a random location
 
             rand_x = random.randint(margin, self.width-margin)
             rand_y = random.randint(margin, self.height-margin)
             
             # while the co-ordinate is too close, discard it
             # and generate another one
-            while distance((rand_x, rand_y), self.spaceship.position) < self.min_rock_distance:
-                # choose a random co-ordinate
+            while distance((rand_x, rand_y), self.spaceship.position) < \
+                    self.min_rock_distance:
+                
+                # choose another random co-ordinate
                 rand_x = random.randint(0, self.width)
                 rand_y = random.randint(0, self.height)
 
             temp_rock = Rock((rand_x, rand_y), size)
 
         else:
-            # a position was passed
+            # a position was given through arguments
             temp_rock = Rock(pos, size)
 
+        # add the recently created rock the the actual rocks list
         self.rocks.append(temp_rock)
 
 
@@ -320,37 +356,62 @@ class MyGame(object):
                 
                     if keys[pygame.K_SPACE]:
                         new_time = datetime.datetime.now()
-                        if new_time - self.fire_time > datetime.timedelta(seconds=0.15):
+                        if new_time - self.fire_time > \
+                                datetime.timedelta(seconds=0.15):
+                            # there should be a minimum of 0.15 delay between
+                            # firing each missile
+
+                            # fire a missile
                             self.spaceship.fire()
+
+                            # play the sound
                             self.missile_sound.play()
+
+                            # record the current fire time
                             self.fire_time = new_time
 
                     if self.state == MyGame.PLAYING:
+                        # if the game is going on
 
                         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                            # when pressing "d" or "right arrow" rotate
+                            # the spaceship clockwise by 10 degrees
                             self.spaceship.angle -= 10
                             self.spaceship.angle %= 360
+
                         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                            # when pressing "d" or "right arrow" rotate
+                            # the spaceship counter clockwise by 10 degrees
                             self.spaceship.angle += 10
                             self.spaceship.angle %= 360
+
                         if keys[pygame.K_UP] or keys[pygame.K_w]:
-                            self.spaceship.is_moving = True
+                            # if "w" or "up arrow" is pressed,
+                            # we should accelerate
+                            self.spaceship.is_throttle_on = True
                             
+                            # increase the speed
                             if self.spaceship.speed < 20:
                                 self.spaceship.speed += 1
                         else:
+                            # if the throttle key ("d" or "up")
+                            # is not pressed, slow down
                             if self.spaceship.speed > 0:
                                 self.spaceship.speed -= 1
-                            self.spaceship.is_moving = False
+                            self.spaceship.is_throttle_on = False
 
+                        # if there are any missiles on the screen, process them
                         if len(self.spaceship.active_missiles) > 0:
                             self.missiles_physics()
 
+                        # if there are any rocks, do their physics
                         if len(self.rocks) > 0:
                             self.rocks_physics()
 
+                        # do the spaceship physics
                         self.physics()
 
+                # draw everything
                 self.draw()
 
             # resume after losing a life
@@ -373,7 +434,8 @@ class MyGame(object):
 
             # user is clicking to start a new game
             elif event.type == pygame.MOUSEBUTTONDOWN \
-                    and (self.state == MyGame.STARTING or self.state == MyGame.WELCOME):
+                    and (self.state == MyGame.STARTING or\
+                            self.state == MyGame.WELCOME):
                 self.do_init()
 
             # user is pressing enter to start a new game
@@ -410,40 +472,60 @@ class MyGame(object):
 
 
     def physics(self):
-        """Do in-game physics here"""
+        """Do spaceship physics here"""
         
         if self.state == MyGame.PLAYING:
 
             # call the move function of the object
             self.spaceship.move()
 
+            """Note that this is a good place to make the spaceship
+            bounce for example, when it hits the walls (sides of screen)
+            or make it not move out of screen when it reaches the borders.
+            Due to lack of time, I can't implement any of them, but they are
+            not hard to do at all."""
+
 
     def missiles_physics(self):
+        """Do all the physics of missiles"""
         
         # if there are any active missiles
         if len(self.spaceship.active_missiles) >  0:
             for missile in self.spaceship.active_missiles:
+                # move the missile
                 missile.move()
 
+                # check the collision with each rock
                 for rock in self.rocks:
                     if rock.size == "big":
+                        # if the missile hits a big rock, destroy it,
+                        # make two medium sized rocks and give 20 scores
                         if distance(missile.position, rock.position) < 80:
                             self.rocks.remove(rock)
                             if missile in self.spaceship.active_missiles:
                                 self.spaceship.active_missiles.remove(missile)
-                            self.make_rock("normal", (rock.position[0]+10, rock.position[1]))
-                            self.make_rock("normal", (rock.position[0]-10, rock.position[1]))
+                            self.make_rock("normal", \
+                                (rock.position[0]+10, rock.position[1]))
+                            self.make_rock("normal", \
+                                (rock.position[0]-10, rock.position[1]))
                             self.score += 20
+
                     elif rock.size == "normal":
+                        # if the missile hits a medium sized rock, destroy it,
+                        # make two small sized rocks and give 50 scores
                         if distance(missile.position, rock.position) < 55:
                             self.rocks.remove(rock)
                             if missile in self.spaceship.active_missiles:
                                 self.spaceship.active_missiles.remove(missile)
-                            self.make_rock("small", (rock.position[0]+10, rock.position[1]))
-                            self.make_rock("small", (rock.position[0]-10, rock.position[1]))
+                            self.make_rock("small", \
+                                (rock.position[0]+10, rock.position[1]))
+                            self.make_rock("small", \
+                                (rock.position[0]-10, rock.position[1]))
                             self.score += 50
                     else:
-                        # the rock is small
+                        # if the missile hits a small rock, destroy it,
+                        # make one big rock if there are less than 10 rocks
+                        # on the screen, and give 100 scores
                         if distance(missile.position, rock.position) < 30:
                             self.rocks.remove(rock)
                             if missile in self.spaceship.active_missiles:
@@ -458,16 +540,21 @@ class MyGame(object):
     def rocks_physics(self):
         """Move the rocks if there are any"""
 
+        # if there are any rocks
         if len(self.rocks) > 0:
 
             for rock in self.rocks:
+                # move the rock
                 rock.move()
 
 
+                # if the rock hits the spaceship, die once
                 if distance(rock.position, self.spaceship.position) < \
                         self.death_distances[rock.size]:
                     self.die()
 
+                # if the rock goes out of screen and there are less than
+                # 10 rocks on the screen, create a new rock with the same size
                 elif distance(rock.position, (self.width/2, self.height/2)) > \
                      math.sqrt((self.width/2)**2 + (self.height/2)**2):
 
@@ -481,12 +568,13 @@ class MyGame(object):
         # everything we draw now is to a buffer that is not displayed
         self.screen.fill(self.bg_color)
     
+        # if we are not on the welcome screen
         if self.state != MyGame.WELCOME:
-            # if we are not on the welcome screen
 
+            # draw the spaceship
             self.spaceship.draw_on(self.screen)
 
-            # if there are any active missiles
+            # if there are any active missiles draw them
             if len(self.spaceship.active_missiles) >  0:
                 for missile in self.spaceship.active_missiles:
                     missile.draw_on(self.screen)
@@ -496,21 +584,25 @@ class MyGame(object):
                 for rock in self.rocks:
                     rock.draw_on(self.screen)
 
+            # if we are in game play mode
             if self.state == MyGame.PLAYING:
+
                 # increment the counter by 1
                 self.counter += 1
 
                 if self.counter == 20*self.FPS:
-                # time to add a new rock (20 secs without dying)
+                # time to increase difficulty (20 secs without dying)
 
                     if len(self.rocks) < 15:  # keeping it sane
+                        # add a new rock
                         self.make_rock()
 
+                    # decrease the minimum rock creation distance
                     if self.min_rock_distance < 200:
                         self.min_rock_distance -= 50
 
                     # set the counter back to zero
-                        self.counter = 0
+                    self.counter = 0
 
             # create and display the text for score
             scores_text = self.medium_font.render(str(self.score),\
@@ -519,7 +611,7 @@ class MyGame(object):
                 (self.width-scores_text.get_width(), scores_text.get_height()+\
                                                         10))
 
-            # if the game is over
+            # if the game is over, display the game over text
             if self.state == MyGame.GAME_OVER or self.state == MyGame.STARTING:
                 draw_centered(self.gameover_text, self.screen,\
                                 (self.width//2, self.height//2))
@@ -533,10 +625,12 @@ class MyGame(object):
         else:
             # draw the welcome texts
             draw_centered(self.welcome_asteroids, self.screen,\
-                (self.width//2, self.height//2-self.welcome_asteroids.get_height()))
+                (self.width//2, self.height//2\
+                    -self.welcome_asteroids.get_height()))
 
             draw_centered(self.welcome_desc, self.screen,\
-                (self.width//2, self.height//2+self.welcome_desc.get_height()))
+                (self.width//2, self.height//2\
+                    +self.welcome_desc.get_height()))
 
         # flip buffers so that everything we have drawn gets displayed
         pygame.display.flip()
